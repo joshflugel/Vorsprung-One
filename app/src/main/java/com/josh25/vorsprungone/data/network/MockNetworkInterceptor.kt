@@ -10,16 +10,16 @@ import okhttp3.ResponseBody
 class MockNetworkInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
-        return if (request.url().encodedPath() == "rovermission/init") {
+        return if (request.url().encodedPath() == "/rovermission/init") {
             createMockResponse(request, """
                 {
                     "topRightCorner": {
-                        "x": 6,
-                        "y": 6
+                        "x": 5,
+                        "y": 5
                     },
                     "roverPosition": {
-                        "x": 2,
-                        "y": 3
+                        "x": 1,
+                        "y": 2
                     },
                     "roverDirection": "N",
                     "movements": "LMLMRMR"

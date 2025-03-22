@@ -43,13 +43,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideExecuteRoverCommandsUseCase(): ExecuteRoverCommandsUseCase {
-        return ExecuteRoverCommandsUseCase()
+    fun provideExecuteRoverCommandsUseCase(repository: MissionPlanRepository): ExecuteRoverCommandsUseCase {
+        return ExecuteRoverCommandsUseCase(repository)
     }
 
     @Provides
     @Singleton
-    fun provideRoverViewModel(repository: MissionPlanRepository, useCase: ExecuteRoverCommandsUseCase): TerrainGridViewModel {
-        return TerrainGridViewModel(repository, useCase)
+    fun provideRoverViewModel( roverCommandsUseCase: ExecuteRoverCommandsUseCase): TerrainGridViewModel {
+        return TerrainGridViewModel(roverCommandsUseCase)
     }
 }

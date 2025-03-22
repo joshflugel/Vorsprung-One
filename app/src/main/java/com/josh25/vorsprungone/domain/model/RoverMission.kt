@@ -18,5 +18,12 @@ data class Position(
     val y: Int
 )
 
-enum class Direction { N, S, E, W }
-enum class Movements { LEFT, RIGHT, MOVE }
+fun RoverMission.toRover(): Rover {
+    return Rover(
+        x = roverPosition.x,
+        y = roverPosition.y,
+        direction = roverDirection,
+        maxX = topRightCorner.x,
+        maxY = topRightCorner.y
+    )
+}
