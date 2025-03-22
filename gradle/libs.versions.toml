@@ -1,5 +1,7 @@
 [versions]
 agp = "8.8.2"
+converterGson = "2.11.0"
+gson = "2.10.1"
 kotlin = "2.1.10"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -15,6 +17,7 @@ compose = "1.7.8"
 coroutines = "1.10.1"
 lifecycle = "2.8.7"
 ksp = "2.1.10-1.0.30"
+retrofit = "2.11.0"
 uiTestJunit4 = "d1.8.0-rc01"
 uiTestManifest = "1.7.8"
 
@@ -49,6 +52,11 @@ composeToolingDebug = { module = "androidx.compose.ui:ui-tooling", version.ref =
 # UI Tests (Compose)
 ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "uiTestJunit4" }
 ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "uiTestManifest" }
+
+# Retrofit
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

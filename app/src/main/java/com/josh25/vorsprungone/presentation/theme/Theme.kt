@@ -1,6 +1,5 @@
-package com.josh25.vorsprungone.ui.theme
+package com.josh25.vorsprungone.presentation.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

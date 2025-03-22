@@ -84,4 +84,11 @@ dependencies {
     // UI Testing
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.test.manifest)
+
+    // Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.gson)
+    implementation(libs.converter.gson)
+
+    // testImplementation("com.squareup.retrofit2:retrofit-mock:2.7.1")
 }

@@ -1,4 +1,4 @@
-package com.josh25.vorsprungone.ui.theme
+package com.josh25.vorsprungone.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
