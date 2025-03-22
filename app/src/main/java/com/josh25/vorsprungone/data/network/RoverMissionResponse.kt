@@ -3,9 +3,9 @@ package com.josh25.vorsprungone.data.network
 import com.google.gson.annotations.SerializedName
 import com.josh25.vorsprungone.domain.model.Corner
 import com.josh25.vorsprungone.domain.model.Movements
-import com.josh25.vorsprungone.domain.model.RoverDirection
+import com.josh25.vorsprungone.domain.model.Direction
 import com.josh25.vorsprungone.domain.model.RoverMission
-import com.josh25.vorsprungone.domain.model.RoverPosition
+import com.josh25.vorsprungone.domain.model.Position
 
 data class RoverMissionResponse(
     @SerializedName("topRightCorner") val topRightCorner: CornerResponse,
@@ -27,8 +27,8 @@ data class PositionResponse(
 fun RoverMissionResponse.toDomain(): RoverMission {
     return RoverMission(
         topRightCorner = Corner(topRightCorner.x, topRightCorner.y),
-        roverPosition = RoverPosition(roverPosition.x, roverPosition.y),
-        roverDirection = RoverDirection.valueOf(roverDirection),
+        roverPosition = Position(roverPosition.x, roverPosition.y),
+        roverDirection = Direction.valueOf(roverDirection),
         movements = movements.map { char ->
             when (char) {
                 'L' -> Movements.LEFT
