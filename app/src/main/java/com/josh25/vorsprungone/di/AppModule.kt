@@ -6,7 +6,7 @@ import com.josh25.vorsprungone.data.network.MockNetworkInterceptor
 import com.josh25.vorsprungone.data.network.createMockApi
 import com.josh25.vorsprungone.data.repository.MissionPlanRepository
 import com.josh25.vorsprungone.domain.usecase.ExecuteRoverCommandsUseCase
-import com.josh25.vorsprungone.presentation.TerrainGridViewModel
+import com.josh25.vorsprungone.presentation.viewmodel.TerrainGridViewModel
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

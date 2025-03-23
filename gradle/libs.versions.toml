@@ -20,6 +20,9 @@ ksp = "2.1.10-1.0.30"
 retrofit = "2.11.0"
 uiTestJunit4 = "d1.8.0-rc01"
 uiTestManifest = "1.7.8"
+coreVersion = "1.17.1"
+media3Transformer = "1.5.1"
+rendering = "1.17.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -57,6 +60,8 @@ ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.re
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+androidx-media3-transformer = { group = "androidx.media3", name = "media3-transformer", version.ref = "media3Transformer" }
+rendering = { group = "com.google.ar.sceneform", name = "rendering", version.ref = "rendering" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
