@@ -14,12 +14,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.viewinterop.AndroidView
 import com.josh25.vorsprungone.domain.model.RoverMission
 import com.josh25.vorsprungone.domain.model.toRover
-import com.josh25.vorsprungone.presentation.GraphicsUiOpenGL.RoverGLSurfaceView
-import com.josh25.vorsprungone.presentation.viewmodel.TerrainGridViewModel
+import com.josh25.vorsprungone.presentation.GraphicsUiOpenGL.SceneOpenGLSurfaceView
+import com.josh25.vorsprungone.presentation.GraphicsUiOpenGL.SceneRenderer
+import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 
 @Composable
-fun MissionControlScreen(viewModel: TerrainGridViewModel = hiltViewModel()) {
+fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val roverState by viewModel.roverState.collectAsState()
     val movements = remember { mutableStateListOf<String>() }
@@ -32,29 +33,44 @@ fun MissionControlScreen(viewModel: TerrainGridViewModel = hiltViewModel()) {
         val isLandscape = maxWidth > maxHeight
 
         Column(modifier = Modifier.fillMaxSize()) {
-            Text(
-                "Vorsprung One Mission Control",
-                fontWeight = FontWeight.Bold,
-                color = Color.Green,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(16.dp)
-            )
+
+            val renderer = SceneRenderer(viewModel)
 
             if (isLandscape) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    RoverTextUiScreen(
-                        roverState = roverState,
-                        movements = movements,
-                        modifier = Modifier.weight(1f).fillMaxHeight()
-                    )
+                Row(modifier = Modifier.fillMaxSize().padding(start = 18.dp)) {
+                    Column() {
+                        Text(
+                            "Vorsprung One Mission Control",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Green,
+                            style = MaterialTheme.typography.headlineMedium,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                        RoverTextUiScreen(
+                            roverState = roverState,
+                            movements = movements,
+                            modifier = Modifier.weight(1f).fillMaxHeight()
+                        )
+                    }
                     OpenGLComposeScreen(
-                        modifier = Modifier.weight(1f).fillMaxHeight()
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        renderer = renderer,
+                        viewModel
                     )
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        "Vorsprung One Mission Control",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Green,
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(14.dp)
+                    )
                     OpenGLComposeScreen(
-                        modifier = Modifier.weight(1f).fillMaxWidth()
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        renderer = renderer,
+                        viewModel
                     )
                     RoverTextUiScreen(
                         roverState = roverState,
@@ -68,11 +84,15 @@ fun MissionControlScreen(viewModel: TerrainGridViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun OpenGLComposeScreen(modifier: Modifier = Modifier) {
+fun OpenGLComposeScreen(modifier: Modifier = Modifier, renderer: SceneRenderer, viewModel: MissionControlViewModel) {
     val context = LocalContext.current
 
     AndroidView(
-        factory = { RoverGLSurfaceView(context) },
+        factory = {
+            val surfaceView = SceneOpenGLSurfaceView(context, viewModel)
+            //surfaceView.setRenderer(renderer)
+            surfaceView
+        },
         modifier = modifier
     )
 }

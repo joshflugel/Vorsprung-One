@@ -1,6 +1,9 @@
 package com.josh25.vorsprungone.presentation.viewmodel
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.josh25.vorsprungone.domain.model.RoverMission
@@ -12,12 +15,16 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class TerrainGridViewModel @Inject constructor(
+class MissionControlViewModel @Inject constructor(
     private val getRoverCommandsUseCase: ExecuteRoverCommandsUseCase
 ) : ViewModel() {
 
     private val _roverState = MutableStateFlow<RoverMission?>(null)
     val roverState: StateFlow<RoverMission?> = _roverState
+
+    var rotationX by mutableStateOf(0f)
+    var rotationY by mutableStateOf(0f)
+    var scale by mutableStateOf(1f)
 
     fun fetchRover() {
         viewModelScope.launch {
@@ -28,32 +35,3 @@ class TerrainGridViewModel @Inject constructor(
         }
     }
 }
-
-
-
-/*
-init {
-    // startRandomMovement()
-}
-    private fun startRandomMovement() {
-        viewModelScope.launch {
-            while (true) {
-                delay(2000) // Change movement every 2 seconds
-                val action = listOf("FORWARD", "LEFT", "RIGHT").random()
-
-                _roverFlow.update { state ->
-                    val angleRad = Math.toRadians(state.rotationAngle.toDouble()).toFloat()
-                    val dx = cos(angleRad) * 1f
-                    val dy = sin(angleRad) * 1f
-
-                    when (action) {
-                        "FORWARD" -> state.copy(x = state.x + dx, y = state.y + dy)
-                        "LEFT" -> state.copy(rotationAngle = state.rotationAngle - 90f)
-                        "RIGHT" -> state.copy(rotationAngle = state.rotationAngle + 90f)
-                        else -> state
-                    }
-                }
-            }
-        }
-    }
- */

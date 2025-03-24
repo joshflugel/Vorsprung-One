@@ -1,12 +1,11 @@
 package com.josh25.vorsprungone.presentation.GraphicsUiOpenGL
 
 import android.opengl.GLES20
+import android.opengl.Matrix
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-
-
-class TerrainGraphics(private val gridSize: Int = 10) {
+class TerrainGraphics(private val width: Int = 10, private val length: Int = 10) {
     private val vertexBuffer: FloatBuffer
     private val program: Int
 
@@ -28,23 +27,26 @@ class TerrainGraphics(private val gridSize: Int = 10) {
     private val vertices: FloatArray
 
     init {
-        // Calculate half the grid size to center the grid around (0,0)
-        val halfGridSize = gridSize / 2f
+        // Calculate the offset to center the terrain around (0, 0)
+        val halfWidth = width / 2f  // Half of the width for centering
+        val halfLength = length / 2f  // Half of the length for centering
         val verticesList = mutableListOf<Float>()
 
-        // Horizontal lines (within the bounds of the grid)
-        for (i in -halfGridSize.toInt()..halfGridSize.toInt()) {
-            val offset = i.toFloat()
+        // Generate vertical lines (we need width + 1 lines)
+        for (i in 0..width) {
+            val offset = i.toFloat() - halfWidth // Shift the grid to center it around 0
             verticesList.addAll(listOf(
-                -halfGridSize, 0f, offset, halfGridSize, 0f, offset // Horizontal line
+                offset, -halfLength, 0f,  // Vertical line start (offset, -halfLength)
+                offset, halfLength, 0f    // Vertical line end (offset, halfLength)
             ))
         }
 
-        // Vertical lines (within the bounds of the grid)
-        for (i in -halfGridSize.toInt()..halfGridSize.toInt()) {
-            val offset = i.toFloat()
+        // Generate horizontal lines (we need length + 1 lines)
+        for (i in 0..length) {
+            val offset = i.toFloat() - halfLength // Shift the grid to center it around 0
             verticesList.addAll(listOf(
-                offset, 0f, -halfGridSize, offset, 0f, halfGridSize // Vertical line
+                -halfWidth, offset, 0f,   // Horizontal line start (-halfWidth, offset)
+                halfWidth, offset, 0f     // Horizontal line end (halfWidth, offset)
             ))
         }
 
@@ -79,7 +81,18 @@ class TerrainGraphics(private val gridSize: Int = 10) {
         GLES20.glEnableVertexAttribArray(positionHandle)
         GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer)
 
-        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvpMatrix, 0)
+        // Apply a rotation matrix to make the terrain parallel to the rover triangle
+        val rotatedMVPMatrix = FloatArray(16)
+        Matrix.setIdentityM(rotatedMVPMatrix, 0)
+
+        // Rotate the terrain 90 degrees around the X-axis (align it with the rover's XY plane)
+        Matrix.rotateM(rotatedMVPMatrix, 0, -90f, 1f, 0f, 0f)  // Rotate 90 degrees around X axis
+
+        // Multiply the original mvpMatrix by the rotated terrain matrix to apply the rotation
+        Matrix.multiplyMM(rotatedMVPMatrix, 0, mvpMatrix, 0, rotatedMVPMatrix, 0)
+
+        // Pass the transformed MVP matrix to the shader
+        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, rotatedMVPMatrix, 0)
 
         GLES20.glDrawArrays(GLES20.GL_LINES, 0, vertices.size / 3) // Use GL_LINES to draw lines instead of GL_LINE_LOOP
 

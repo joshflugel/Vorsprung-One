@@ -9,11 +9,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.josh25.vorsprungone.domain.model.toRover
-import com.josh25.vorsprungone.presentation.viewmodel.TerrainGridViewModel
+import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 
 @Composable
-fun RoverTextUiScreen(viewModel: TerrainGridViewModel = hiltViewModel()) {
+fun RoverTextUiScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
     val roverState by viewModel.roverState.collectAsState()
     val movements = remember { mutableStateListOf<String>() }
 

@@ -5,22 +5,22 @@ import android.opengl.GLSurfaceView
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 
 
-class RoverGLSurfaceView(context: Context) : GLSurfaceView(context),
+class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionControlViewModel) : GLSurfaceView(context),
     GestureDetector.OnGestureListener,
     ScaleGestureDetector.OnScaleGestureListener {
 
-    private val renderer: RoverRenderer
+    private val renderer: SceneRenderer
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
     private val gestureDetector = GestureDetector(context, this)
 
     init {
         setEGLContextClientVersion(2)  // OpenGL ES 2.0
-        renderer = RoverRenderer()
+        renderer = SceneRenderer(viewmodel)
         setRenderer(renderer)
-        //renderMode = RENDERMODE_WHEN_DIRTY
         renderMode = RENDERMODE_CONTINUOUSLY
 
         // INITIAL VIEW setup to zoom out the view and ensure everything fits
@@ -37,36 +37,21 @@ class RoverGLSurfaceView(context: Context) : GLSurfaceView(context),
 
     // Pinch to zoom
     override fun onScale(detector: ScaleGestureDetector): Boolean {
-        // Invert the zooming behavior by multiplying by the reciprocal of scaleFactor
-        renderer.scale /= detector.scaleFactor  // Inverted zooming behavior
-        renderer.scale = renderer.scale.coerceIn(0.5f, 3.0f) // Clamp zoom range
+        renderer.onZoom(detector.scaleFactor)  // Apply zoom in the renderer
         return true
     }
 
     // Swipe to rotate
-    override fun onScroll(
-        e1: MotionEvent?,
-        p1: MotionEvent,
-        distanceX: Float,
-        distanceY: Float
-    ): Boolean {
-        //renderer.rotationY -= distanceX * 0.5f  // Rotate left/right
-        //renderer.rotationX -= distanceY * 0.5f  // Rotate up/down
+    override fun onScroll(e1: MotionEvent?, p1: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
         renderer.onRotate(distanceX, distanceY)
         return true
     }
 
-    // Unused but required overrides
     override fun onScaleBegin(detector: ScaleGestureDetector) = true
     override fun onScaleEnd(detector: ScaleGestureDetector) {}
     override fun onShowPress(p0: MotionEvent) {}
     override fun onSingleTapUp(p0: MotionEvent): Boolean = false
     override fun onDown(p0: MotionEvent): Boolean = false
     override fun onLongPress(p0: MotionEvent) {}
-    override fun onFling(
-        e1: MotionEvent?,
-        p1: MotionEvent,
-        velocityX: Float,
-        velocityY: Float
-    ): Boolean = false
+    override fun onFling(e1: MotionEvent?, p1: MotionEvent, velocityX: Float, velocityY: Float): Boolean = false
 }
