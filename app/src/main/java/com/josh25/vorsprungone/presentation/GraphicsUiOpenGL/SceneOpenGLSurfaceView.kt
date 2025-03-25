@@ -9,7 +9,6 @@ import android.view.ScaleGestureDetector
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 
-
 class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionControlViewModel) : GLSurfaceView(context),
     GestureDetector.OnGestureListener,
     ScaleGestureDetector.OnScaleGestureListener {
@@ -34,7 +33,6 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
     // Pinch to zoom
     override fun onScale(detector: ScaleGestureDetector): Boolean {
         renderer.onZoom(detector.scaleFactor)
-        //Log.e("joshtag", "onScale: ${detector.scaleFactor}")
         return true
     }
 

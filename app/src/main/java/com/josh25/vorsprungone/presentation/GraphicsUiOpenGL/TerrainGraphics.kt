@@ -5,7 +5,9 @@ import android.opengl.Matrix
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-class TerrainGraphics(private val width: Int = 10, private val length: Int = 10) {
+class TerrainGraphics(gridSize: xyPair = xyPair(10, 10)) {
+    private val width = gridSize.x
+    private val length = gridSize.y
     private val vertexBuffer: FloatBuffer
     private val program: Int
 
@@ -28,12 +30,12 @@ class TerrainGraphics(private val width: Int = 10, private val length: Int = 10)
 
     init {
         // Calculate the offset to center the terrain around (0, 0)
-        val halfWidth = width / 2f  // Half of the width for centering
-        val halfLength = length / 2f  // Half of the length for centering
+        val halfWidth = width / 2f
+        val halfLength = length / 2f
         val verticesList = mutableListOf<Float>()
 
         // Generate vertical lines (length + 1 lines)
-        for (i in 0..width) {
+        for (i in 0..width.toInt()) {
             val offset = i.toFloat() - halfWidth // Shift the grid to center it around 0
             verticesList.addAll(listOf(
                 offset, -halfLength, 0f,  // Vertical line start (offset, -halfLength)
@@ -87,15 +89,12 @@ class TerrainGraphics(private val width: Int = 10, private val length: Int = 10)
 
         // Rotate the terrain 90 degrees around the X-axis (align it with the rover's XY plane)
         Matrix.rotateM(rotatedMVPMatrix, 0, -90f, 1f, 0f, 0f)  // Rotate 90 degrees around X axis
-
         // Multiply the original mvpMatrix by the rotated terrain matrix to apply the rotation
         Matrix.multiplyMM(rotatedMVPMatrix, 0, mvpMatrix, 0, rotatedMVPMatrix, 0)
 
         // Pass the transformed MVP matrix to the shader
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, rotatedMVPMatrix, 0)
-
         GLES20.glDrawArrays(GLES20.GL_LINES, 0, vertices.size / 3) // Use GL_LINES to draw lines instead of GL_LINE_LOOP
-
         GLES20.glDisableVertexAttribArray(positionHandle)
     }
 }

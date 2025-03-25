@@ -90,7 +90,6 @@ fun OpenGLComposeScreen(modifier: Modifier = Modifier, renderer: SceneRenderer, 
     AndroidView(
         factory = {
             val surfaceView = SceneOpenGLSurfaceView(context, viewModel)
-            //surfaceView.setRenderer(renderer)
             surfaceView
         },
         modifier = modifier

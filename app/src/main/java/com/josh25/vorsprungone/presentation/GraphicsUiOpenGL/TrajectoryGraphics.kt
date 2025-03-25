@@ -7,10 +7,13 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 
-class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>) {
+class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>, xyPair: xyPair = xyPair(10, 10)) {
     private val vertexBuffer: FloatBuffer
     private val program: Int
     private val vertices: FloatArray
+
+    private val xOffset:Float = xyPair.x.toFloat()/2
+    private val yOffset:Float = xyPair.y.toFloat()/2
 
     private val vertexShaderCode = """
         uniform mat4 uMVPMatrix;
@@ -35,8 +38,8 @@ class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>) 
             val (x1, y1) = pathCoordinates[i]
             val (x2, y2) = pathCoordinates[i + 1]
             verticesList.addAll(listOf(
-                x1, y1, 0f,  // Start point (x1, y1)
-                x2, y2, 0f   // End point (x2, y2)
+                x1 - xOffset, y1 - yOffset, 0f,  // Start point (x1, y1)
+                x2 - xOffset, y2 - yOffset, 0f   // End point (x2, y2)
             ))
         }
 
@@ -77,15 +80,12 @@ class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>) 
 
         // Rotate the terrain 90 degrees around the X-axis (align it with the rover's XY plane)
         Matrix.rotateM(rotatedMVPMatrix, 0, -90f, 1f, 0f, 0f)  // Rotate 90 degrees around X axis
-
         // Multiply the original mvpMatrix by the rotated terrain matrix to apply the rotation
         Matrix.multiplyMM(rotatedMVPMatrix, 0, mvpMatrix, 0, rotatedMVPMatrix, 0)
 
         // Pass the transformed MVP matrix to the shader
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, rotatedMVPMatrix, 0)
-
         GLES20.glDrawArrays(GLES20.GL_LINES, 0, vertices.size / 3) // Draw the path as lines
-
         GLES20.glDisableVertexAttribArray(positionHandle)
     }
 }

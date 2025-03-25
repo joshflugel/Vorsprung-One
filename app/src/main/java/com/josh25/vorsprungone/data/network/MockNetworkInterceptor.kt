@@ -14,8 +14,8 @@ class MockNetworkInterceptor : Interceptor {
             createMockResponse(request, """
                 {
                     "topRightCorner": {
-                        "x": 5,
-                        "y": 5
+                        "x": 2,
+                        "y": 2
                     },
                     "roverPosition": {
                         "x": 1,
