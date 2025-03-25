@@ -2,6 +2,7 @@ package com.josh25.vorsprungone.presentation.GraphicsUiOpenGL
 
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
@@ -22,11 +23,6 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
         renderer = SceneRenderer(viewmodel)
         setRenderer(renderer)
         renderMode = RENDERMODE_CONTINUOUSLY
-
-        // INITIAL VIEW setup to zoom out the view and ensure everything fits
-        renderer.scale = 1.0f
-        renderer.rotationX = 0.0f
-        renderer.rotationY = 0.0f
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -37,7 +33,8 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
 
     // Pinch to zoom
     override fun onScale(detector: ScaleGestureDetector): Boolean {
-        renderer.onZoom(detector.scaleFactor)  // Apply zoom in the renderer
+        renderer.onZoom(detector.scaleFactor)
+        //Log.e("joshtag", "onScale: ${detector.scaleFactor}")
         return true
     }
 

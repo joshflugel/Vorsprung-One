@@ -5,9 +5,12 @@ import android.opengl.Matrix
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-class TerrainGraphics(private val width: Int = 10, private val length: Int = 10) {
+
+
+class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>) {
     private val vertexBuffer: FloatBuffer
     private val program: Int
+    private val vertices: FloatArray
 
     private val vertexShaderCode = """
         uniform mat4 uMVPMatrix;
@@ -20,33 +23,20 @@ class TerrainGraphics(private val width: Int = 10, private val length: Int = 10)
     private val fragmentShaderCode = """
         precision mediump float;
         void main() {
-            gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green wireframe
+            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red path
         }
     """.trimIndent()
 
-    private val vertices: FloatArray
-
     init {
-        // Calculate the offset to center the terrain around (0, 0)
-        val halfWidth = width / 2f  // Half of the width for centering
-        val halfLength = length / 2f  // Half of the length for centering
         val verticesList = mutableListOf<Float>()
 
-        // Generate vertical lines (length + 1 lines)
-        for (i in 0..width) {
-            val offset = i.toFloat() - halfWidth // Shift the grid to center it around 0
+        // Add the path coordinates as vertices to form the red path
+        for (i in 0 until pathCoordinates.size - 1) {
+            val (x1, y1) = pathCoordinates[i]
+            val (x2, y2) = pathCoordinates[i + 1]
             verticesList.addAll(listOf(
-                offset, -halfLength, 0f,  // Vertical line start (offset, -halfLength)
-                offset, halfLength, 0f    // Vertical line end (offset, halfLength)
-            ))
-        }
-
-        // Generate horizontal lines (length + 1 lines)
-        for (i in 0..length) {
-            val offset = i.toFloat() - halfLength // Shift the grid to center it around 0
-            verticesList.addAll(listOf(
-                -halfWidth, offset, 0f,   // Horizontal line start (-halfWidth, offset)
-                halfWidth, offset, 0f     // Horizontal line end (halfWidth, offset)
+                x1, y1, 0f,  // Start point (x1, y1)
+                x2, y2, 0f   // End point (x2, y2)
             ))
         }
 
@@ -94,7 +84,7 @@ class TerrainGraphics(private val width: Int = 10, private val length: Int = 10)
         // Pass the transformed MVP matrix to the shader
         GLES20.glUniformMatrix4fv(mvpHandle, 1, false, rotatedMVPMatrix, 0)
 
-        GLES20.glDrawArrays(GLES20.GL_LINES, 0, vertices.size / 3) // Use GL_LINES to draw lines instead of GL_LINE_LOOP
+        GLES20.glDrawArrays(GLES20.GL_LINES, 0, vertices.size / 3) // Draw the path as lines
 
         GLES20.glDisableVertexAttribArray(positionHandle)
     }

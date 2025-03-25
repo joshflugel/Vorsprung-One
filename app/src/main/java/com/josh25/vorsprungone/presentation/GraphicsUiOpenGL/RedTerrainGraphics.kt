@@ -1,13 +1,17 @@
 package com.josh25.vorsprungone.presentation.GraphicsUiOpenGL
 
+
 import android.opengl.GLES20
 import android.opengl.Matrix
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-class TerrainGraphics(private val width: Int = 10, private val length: Int = 10) {
+
+
+class RedTerrainGraphics(private val width: Int = 10, private val length: Int = 10) {
     private val vertexBuffer: FloatBuffer
     private val program: Int
+    private val vertices: FloatArray
 
     private val vertexShaderCode = """
         uniform mat4 uMVPMatrix;
@@ -20,19 +24,16 @@ class TerrainGraphics(private val width: Int = 10, private val length: Int = 10)
     private val fragmentShaderCode = """
         precision mediump float;
         void main() {
-            gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // Green wireframe
+            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red wireframe
         }
     """.trimIndent()
 
-    private val vertices: FloatArray
-
     init {
-        // Calculate the offset to center the terrain around (0, 0)
-        val halfWidth = width / 2f  // Half of the width for centering
+        val halfWidth = width / 2f  // Half of the width length for centering
         val halfLength = length / 2f  // Half of the length for centering
         val verticesList = mutableListOf<Float>()
 
-        // Generate vertical lines (length + 1 lines)
+        // Generate vertical lines (we need width + 1 lines)
         for (i in 0..width) {
             val offset = i.toFloat() - halfWidth // Shift the grid to center it around 0
             verticesList.addAll(listOf(
@@ -41,7 +42,7 @@ class TerrainGraphics(private val width: Int = 10, private val length: Int = 10)
             ))
         }
 
-        // Generate horizontal lines (length + 1 lines)
+        // Generate horizontal lines (we need length + 1 lines)
         for (i in 0..length) {
             val offset = i.toFloat() - halfLength // Shift the grid to center it around 0
             verticesList.addAll(listOf(

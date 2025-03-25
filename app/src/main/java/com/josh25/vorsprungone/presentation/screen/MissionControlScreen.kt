@@ -37,7 +37,7 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
             val renderer = SceneRenderer(viewModel)
 
             if (isLandscape) {
-                Row(modifier = Modifier.fillMaxSize().padding(start = 18.dp)) {
+                Row(modifier = Modifier.fillMaxSize().padding(start = 40.dp, end = 24.dp)) {
                     Column() {
                         Text(
                             "Vorsprung One Mission Control",
