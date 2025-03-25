@@ -5,7 +5,8 @@ import com.josh25.vorsprungone.data.network.MockApi
 import com.josh25.vorsprungone.data.network.MockNetworkInterceptor
 import com.josh25.vorsprungone.data.network.createMockApi
 import com.josh25.vorsprungone.data.repository.MissionPlanRepository
-import com.josh25.vorsprungone.domain.usecase.ExecuteRoverCommandsUseCase
+import com.josh25.vorsprungone.domain.usecase.GetMissionPlanUseCase
+import com.josh25.vorsprungone.domain.usecase.GetMissionSequenceUseCase
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 import dagger.Module
 import dagger.Provides
@@ -43,13 +44,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideExecuteRoverCommandsUseCase(repository: MissionPlanRepository): ExecuteRoverCommandsUseCase {
-        return ExecuteRoverCommandsUseCase(repository)
+    fun provideExecuteRoverCommandsUseCase(repository: MissionPlanRepository): GetMissionSequenceUseCase {
+        return GetMissionSequenceUseCase(repository)
     }
 
     @Provides
     @Singleton
-    fun provideRoverViewModel( roverCommandsUseCase: ExecuteRoverCommandsUseCase): MissionControlViewModel {
-        return MissionControlViewModel(roverCommandsUseCase)
+    fun provideRoverViewModel(
+        getMissionSequenceUseCase: GetMissionSequenceUseCase,
+        getMissionPlanUseCase: GetMissionPlanUseCase
+    ): MissionControlViewModel {
+        return MissionControlViewModel(getMissionSequenceUseCase, getMissionPlanUseCase) // ✅ correct instance
     }
 }

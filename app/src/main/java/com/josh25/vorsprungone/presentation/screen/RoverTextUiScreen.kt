@@ -18,7 +18,7 @@ fun RoverTextUiScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
     val movements = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(Unit) {
-        viewModel.fetchRover()
+        viewModel.fetchMissionSequence()
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {

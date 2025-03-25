@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -24,58 +25,54 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val roverState by viewModel.roverState.collectAsState()
     val movements = remember { mutableStateListOf<String>() }
-
     LaunchedEffect(Unit) {
-        viewModel.fetchRover()
+        //viewModel.fetchMissionSequence()
     }
-
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints() {
         val isLandscape = maxWidth > maxHeight
-
         Column(modifier = Modifier.fillMaxSize()) {
-
-            val renderer = SceneRenderer(viewModel)
-
             if (isLandscape) {
-                Row(modifier = Modifier.fillMaxSize().padding(start = 40.dp, end = 24.dp)) {
+                Row(modifier = Modifier.fillMaxSize().padding(start = 42.dp, end = 42.dp)) {
                     Column() {
+
                         Text(
-                            "Vorsprung One Mission Control",
+                            text = "Vorsprung One Mission Control",
                             fontWeight = FontWeight.Bold,
                             color = Color.Green,
-                            style = MaterialTheme.typography.headlineMedium,
-                            modifier = Modifier.padding(14.dp)
+                            style = MaterialTheme.typography.headlineSmall
                         )
+                        //     MainBar({ viewModel.fetchMissionSequence() })
                         RoverTextUiScreen(
                             roverState = roverState,
                             movements = movements,
-                            modifier = Modifier.weight(1f).fillMaxHeight()
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            onClick = {viewModel.fetchMissionSequence()}
                         )
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                     OpenGLComposeScreen(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        renderer = renderer,
                         viewModel
                     )
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column() {
+                   // MainBar({ viewModel.fetchMissionSequence() })
                     Text(
-                        "Vorsprung One Mission Control",
+                        text = " Vorsprung One Mission Control",
                         fontWeight = FontWeight.Bold,
                         color = Color.Green,
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.padding(14.dp)
+                        style = MaterialTheme.typography.headlineMedium
                     )
                     OpenGLComposeScreen(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
-                        renderer = renderer,
                         viewModel
                     )
                     RoverTextUiScreen(
                         roverState = roverState,
                         movements = movements,
-                        modifier = Modifier.weight(1f).fillMaxWidth()
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        onClick = {viewModel.fetchMissionSequence()}
                     )
                 }
             }
@@ -83,8 +80,9 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
     }
 }
 
+
 @Composable
-fun OpenGLComposeScreen(modifier: Modifier = Modifier, renderer: SceneRenderer, viewModel: MissionControlViewModel) {
+fun OpenGLComposeScreen(modifier: Modifier = Modifier, viewModel: MissionControlViewModel) {
     val context = LocalContext.current
 
     AndroidView(
@@ -97,14 +95,34 @@ fun OpenGLComposeScreen(modifier: Modifier = Modifier, renderer: SceneRenderer, 
 }
 
 @Composable
+fun MainBarH(onClick: () -> Unit){
+    Row(
+        modifier = Modifier.padding(horizontal = 1.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Rover Position", style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.width(24.dp))
+        Button(
+            onClick = {onClick() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+            modifier = Modifier
+                .height(30.dp)
+        ) {
+            Text("Execute Mission", color = Color.White)
+        }
+    }
+}
+
+@Composable
 fun RoverTextUiScreen(
     roverState: RoverMission?,
     movements: MutableList<String>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
-    Column(modifier = modifier.padding(16.dp)) {
-        Text("Rover Position", style = MaterialTheme.typography.headlineSmall)
-
+    Column(modifier = modifier.padding(12.dp)) {
+        MainBarH(onClick)
         Text(
             text = roverState?.let {
                 val rover = it.toRover()
@@ -112,9 +130,7 @@ fun RoverTextUiScreen(
             } ?: "Initializing...",
             style = MaterialTheme.typography.bodyLarge
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(modifier = Modifier.height(8.dp))
         Text("Movement History:")
         LazyColumn {
             items(movements) { movement ->

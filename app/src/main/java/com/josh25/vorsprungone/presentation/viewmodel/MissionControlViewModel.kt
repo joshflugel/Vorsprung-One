@@ -7,7 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.josh25.vorsprungone.domain.model.RoverMission
-import com.josh25.vorsprungone.domain.usecase.ExecuteRoverCommandsUseCase
+import com.josh25.vorsprungone.domain.usecase.GetMissionPlanUseCase
+import com.josh25.vorsprungone.domain.usecase.GetMissionSequenceUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MissionControlViewModel @Inject constructor(
-    private val getRoverCommandsUseCase: ExecuteRoverCommandsUseCase
+    private val getMissionSequenceUseCase: GetMissionSequenceUseCase,
+    private val getMissionPlanUseCase: GetMissionPlanUseCase
 ) : ViewModel() {
 
     private val _roverState = MutableStateFlow<RoverMission?>(null)
@@ -26,12 +28,19 @@ class MissionControlViewModel @Inject constructor(
     var rotationY by mutableStateOf(0f)
     var scale by mutableStateOf(1f)
 
-    fun fetchRover() {
+    fun fetchMissionSequence() {
         viewModelScope.launch {
-            getRoverCommandsUseCase.execute().collect { updatedRover ->
+            getMissionSequenceUseCase.execute().collect { updatedRover ->
                 Log.d("RoverDebug", "New RoverMission received: $updatedRover")
                 _roverState.value = updatedRover
             }
+        }
+    }
+
+    fun fetchMissionPlan() {
+        viewModelScope.launch {
+            val finalMission = getMissionPlanUseCase.execute()
+            _roverState.value = finalMission
         }
     }
 }

@@ -7,6 +7,20 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody
 
+/*
+{
+    "topRightCorner": {
+        "x": 12,
+        "y": 12
+    },
+    "roverPosition": {
+        "x": 1,
+        "y": 2
+    },
+    "roverDirection": "N",
+    "movements": "LMLMLMLMM"
+}
+*/
 class MockNetworkInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
@@ -14,15 +28,15 @@ class MockNetworkInterceptor : Interceptor {
             createMockResponse(request, """
                 {
                     "topRightCorner": {
-                        "x": 2,
-                        "y": 2
+                        "x": 9,
+                        "y": 9
                     },
                     "roverPosition": {
-                        "x": 1,
-                        "y": 2
+                        "x": 0,
+                        "y": 0
                     },
                     "roverDirection": "N",
-                    "movements": "LMLMLMLMM"
+                    "movements": "MMMMMM"
                 }
             """.trimIndent())
         } else {

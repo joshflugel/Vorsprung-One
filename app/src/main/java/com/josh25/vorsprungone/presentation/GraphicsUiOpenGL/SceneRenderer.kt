@@ -35,7 +35,7 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
         GLES20.glClearColor(0f, 0f, 0f, 1f) // Black background
         GLES20.glEnable(GLES20.GL_DEPTH_TEST) // Enable depth testing
 
-        var gridSize = xyPair(19,14)
+        var gridSize = xyPair(9,9)
         xOffset = gridSize.x.toFloat()/2
         yOffset = gridSize.y.toFloat()/2
         terrainGraphics = TerrainGraphics(gridSize)
@@ -58,9 +58,9 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     // Dynamically calculate the zoom factor based on the grid size
     private fun calculateZoomFactor(gridSize: xyPair): Float {
         return when {
-            gridSize.x > 15 -> 2.5f // zoom out more for larger grids
-            gridSize.x > 10 -> 1.5f // moderate zoom for medium grids
-            else -> 1f // no zoom for small grids
+            gridSize.x > 15 -> 3.0f // zoom out more for larger grids
+            gridSize.x > 10 -> 2.0f // moderate zoom for medium grids
+            else -> 1.3f // no zoom for small grids
         }
     }
 
@@ -79,22 +79,30 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
         val scale = viewModel.scale
         val adjustedZoom = zoomFactor * scale
 
+
         Matrix.setLookAtM(
             viewMatrix, 0,
-            0f, 5f, 15f * adjustedZoom,  // Apply scale to the camera's position (zooming)
-            0f, 0f, 0f,     // Look-at position
+            0f, 10f, 15f * adjustedZoom,  // Apply scale to the camera's position (zooming)
+            0f, 0f, 0f,     // Look-at position, zeroes = origin
             0f, 1f, 0f              // Up direction
         )
 
+
+
+
+        var roverX = 0f
+        var roverY = 0f
+        Matrix.setIdentityM(roverModelMatrix, 0)
         viewModel.roverState.value?.let { roverMission ->
-            val roverX = roverMission.roverPosition.x.toFloat()
-            val roverY = roverMission.roverPosition.y.toFloat()
+            roverX = roverMission.roverPosition.x.toFloat()
+            roverY = roverMission.roverPosition.y.toFloat()
+           // Matrix.translateM(roverModelMatrix, 0, roverX - xOffset, 0f, roverY - yOffset)
         }
 
         // Reset matrices before applying transformations
         Matrix.setIdentityM(terrainModelMatrix, 0)
         Matrix.setIdentityM(trajectoryModelMatrix, 0)
-        Matrix.setIdentityM(roverModelMatrix, 0)
+
 
         viewModel.run {
             // Apply scene-wide transformations (rotate + scale) - x z -y
@@ -103,7 +111,8 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
             Matrix.rotateM(roverModelMatrix, 0, rotationX, 1f, 0f, 0f)
             Matrix.rotateM(roverModelMatrix, 0, rotationY, 0f, 1f, 0f)
-            Matrix.translateM(roverModelMatrix, 0, -xOffset, 0f, yOffset )
+            //Matrix.translateM(roverModelMatrix, 0, -xOffset, 0f, yOffset )
+             Matrix.translateM(roverModelMatrix, 0, roverX - xOffset, 0f, yOffset - roverY)
 
             Matrix.rotateM(trajectoryModelMatrix, 0, rotationX, 1f, 0f, 0f)
             Matrix.rotateM(trajectoryModelMatrix, 0, rotationY, 0f, 1f, 0f)
@@ -117,7 +126,7 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
             Matrix.multiplyMM(finalMvpMatrix, 0, mvpMatrix, 0, roverModelMatrix, 0)
-            roverGraphics.setDirection(Direction.W)
+            //roverGraphics.setDirection(Direction.W)
             roverGraphics.draw(finalMvpMatrix)
 
             Matrix.multiplyMM(finalMvpMatrix, 0, mvpMatrix, 0, trajectoryModelMatrix, 0)
