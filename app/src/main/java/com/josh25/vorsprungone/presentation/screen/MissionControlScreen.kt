@@ -97,6 +97,7 @@ fun OpenGLComposeScreen(modifier: Modifier = Modifier, viewModel: MissionControl
     LaunchedEffect(roverState) {
         roverState?.let { mission ->
             surfaceViewRef?.initMissionAndRender(mission)
+            surfaceViewRef?.requestRender()
         }
     }
 }

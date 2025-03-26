@@ -36,7 +36,7 @@ class MockNetworkInterceptor : Interceptor {
                         "y": 2
                     },
                     "roverDirection": "N",
-                    "movements": "MMLMMRMRMMMMRMMMLMRMRMRM"
+                    "movements": "MMLMMRMRMMMMRMMMLMRMRMLM"
                 }
             """.trimIndent())
         } else {

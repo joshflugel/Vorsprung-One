@@ -21,8 +21,9 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
     init {
         setEGLContextClientVersion(2)  // OpenGL ES 2.0
         renderer = SceneRenderer(viewmodel)
+        renderer.attachSurfaceView(this)
         setRenderer(renderer)
-        renderMode = RENDERMODE_CONTINUOUSLY
+        renderMode = RENDERMODE_WHEN_DIRTY
     }
     fun initMissionAndRender(mission: RoverMission) {
         renderer.submitMission(mission)
@@ -37,12 +38,14 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
 
     // Pinch to zoom
     override fun onScale(detector: ScaleGestureDetector): Boolean {
+        requestRender()
         renderer.onZoom(detector.scaleFactor)
         return true
     }
 
     // Swipe to rotate
     override fun onScroll(e1: MotionEvent?, p1: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+        requestRender()
         renderer.onRotate(distanceX, distanceY)
         return true
     }

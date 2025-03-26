@@ -5,7 +5,8 @@ data class Rover(
     val y: Int,
     val direction: Direction,
     val maxX: Int,
-    val maxY: Int
+    val maxY: Int,
+    val movements: List<Movements>
 ) {
     fun move(): Rover = when (direction) {
         Direction.N -> copy(y = (y + 1).coerceAtMost(maxY))

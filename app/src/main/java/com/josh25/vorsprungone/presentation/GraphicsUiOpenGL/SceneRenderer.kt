@@ -7,9 +7,11 @@ import android.opengl.Matrix
 import android.util.Log
 import com.josh25.vorsprungone.domain.model.Direction
 import com.josh25.vorsprungone.domain.model.RoverMission
+import com.josh25.vorsprungone.domain.model.computeFullTrajectory
 import com.josh25.vorsprungone.domain.model.toRover
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.log
 
 data class xyPair(val x: Int, val y: Int)
 
@@ -24,6 +26,7 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     private lateinit var terrainGraphics: TerrainGraphics
     private lateinit var roverGraphics: RoverGraphics
     private lateinit var trajectoryGraphics: TrajectoryGraphics
+    private var trajectoryCache: List<Pair<Float, Float>> = emptyList()
 
     private var xOffset:Float = 0f
     private var yOffset:Float = 0f
@@ -45,8 +48,13 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
         roverY = mission.roverPosition.y.toFloat()
         xOffset = gridSize.x.toFloat() / 2
         yOffset = gridSize.y.toFloat() / 2
+        if(mission.computeFullTrajectory().size > 1) {
+            trajectoryCache =
+                mission.computeFullTrajectory()// toRover().fullTrajectory//viewModel.fetchMissionPlan(). .computeFullTrajectory()
+        }
+        Log.e("joshtag","Direction: ${mission.toRover().direction}")
         terrainGraphics = TerrainGraphics(gridSize)
-        trajectoryGraphics = TrajectoryGraphics(emptyList(), gridSize) // or real trajectory
+        trajectoryGraphics = TrajectoryGraphics(trajectoryCache, gridSize) // or real trajectory
         roverGraphics = RoverGraphics()
         zoomFactor = calculateZoomFactor(gridSize)
         readyToRender = true
@@ -87,6 +95,7 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
         if (!initialized && missionPending != null) {
             initializeSceneWithMission(missionPending!!)
+            roverGraphics.setDirection(missionPending!!.toRover().direction)
             missionPending = null
             initialized = true
         }
@@ -129,13 +138,34 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
             Matrix.multiplyMM(finalMvpMatrix, 0, mvpMatrix, 0, roverModelMatrix, 0)
-            //roverGraphics.setDirection(Direction.W)
             roverGraphics.draw(finalMvpMatrix)
 
             Matrix.multiplyMM(finalMvpMatrix, 0, mvpMatrix, 0, trajectoryModelMatrix, 0)
-            trajectoryGraphics.draw(finalMvpMatrix)
+            updateCurrentRoverPosition(roverX, roverY)
+            trajectoryGraphics.draw(finalMvpMatrix, currentWaypointIndex)
+
+            Log.e("joshtag", "Trajectory.size: ${trajectoryCache.size}")
+        }
+
+    }
+    private var currentWaypointIndex = 0
+    fun updateCurrentRoverPosition(x: Float, y: Float) {
+        // Find the closest waypoint index (or the last one the rover passed)
+        trajectoryCache.forEachIndexed { index, (px, py) ->
+            if (px == x && py == y) {
+                currentWaypointIndex = index
+            }
         }
     }
+
+    private var surfaceView: GLSurfaceView? = null
+    fun attachSurfaceView(view: GLSurfaceView) {
+        surfaceView = view
+    }
+    private fun triggerRender() {
+        surfaceView?.requestRender()
+    }
+
 
     fun onRotate(dx: Float, dy: Float) {
         viewModel.run {
@@ -146,6 +176,7 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
             rotationY -= dx * 0.5f
             rotationY = (rotationY + 180f) % 360f - 180f
         }
+        triggerRender()
     }
 
     fun onZoom(scaleFactor: Float) {
@@ -153,5 +184,6 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
             scale /= scaleFactor // Update scale in the ViewModel
             scale = scale.coerceIn(0.1f, 6f)  // Clamp zoom level
         }
+        triggerRender()
     }
 }

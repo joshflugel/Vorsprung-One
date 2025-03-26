@@ -6,14 +6,9 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
-
 class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>, xyPair: xyPair = xyPair(10, 10)) {
-    private val vertexBuffer: FloatBuffer
-    private val program: Int
-    private val vertices: FloatArray
-
-    private val xOffset:Float = xyPair.x.toFloat()/2
-    private val yOffset:Float = xyPair.y.toFloat()/2
+    private val xOffset: Float = xyPair.x.toFloat() / 2
+    private val yOffset: Float = xyPair.y.toFloat() / 2
 
     private val vertexShaderCode = """
         uniform mat4 uMVPMatrix;
@@ -25,67 +20,79 @@ class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>, 
 
     private val fragmentShaderCode = """
         precision mediump float;
+        uniform vec4 uColor;
         void main() {
-            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red path
+            gl_FragColor = uColor;
         }
     """.trimIndent()
 
-    init {
-        val verticesList = mutableListOf<Float>()
-
-        // Add the path coordinates as vertices to form the red path
-        for (i in 0 until pathCoordinates.size - 1) {
-            val (x1, y1) = pathCoordinates[i]
-            val (x2, y2) = pathCoordinates[i + 1]
-            verticesList.addAll(listOf(
-                x1 - xOffset, y1 - yOffset, 0f,  // Start point (x1, y1)
-                x2 - xOffset, y2 - yOffset, 0f   // End point (x2, y2)
-            ))
-        }
-
-        // Convert list to array
-        vertices = FloatArray(verticesList.size)
-        for (i in verticesList.indices) {
-            vertices[i] = verticesList[i]
-        }
-
-        val bb = ByteBuffer.allocateDirect(vertices.size * 4)
-        bb.order(ByteOrder.nativeOrder())
-        vertexBuffer = bb.asFloatBuffer()
-        vertexBuffer.put(vertices)
-        vertexBuffer.position(0)
-
+    private val program: Int = run {
         val vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode)
         val fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode)
-
-        program = GLES20.glCreateProgram().apply {
+        GLES20.glCreateProgram().apply {
             GLES20.glAttachShader(this, vertexShader)
             GLES20.glAttachShader(this, fragmentShader)
             GLES20.glLinkProgram(this)
         }
     }
 
-    fun draw(mvpMatrix: FloatArray) {
+    private val allSegments: List<FloatArray> = buildSegmentList(pathCoordinates)
+
+    // Split the full line list into individual segments
+    private fun buildSegmentList(coords: List<Pair<Float, Float>>): List<FloatArray> {
+        val list = mutableListOf<FloatArray>()
+        for (i in 0 until coords.size - 1) {
+            val (x1, y1) = coords[i]
+            val (x2, y2) = coords[i + 1]
+            list.add(floatArrayOf(
+                x1 - xOffset, y1 - yOffset, 0f,
+                x2 - xOffset, y2 - yOffset, 0f
+            ))
+        }
+        return list
+    }
+
+    fun draw(mvpMatrix: FloatArray, splitIndex: Int) {
         GLES20.glUseProgram(program)
 
         val positionHandle = GLES20.glGetAttribLocation(program, "vPosition")
         val mvpHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix")
+        val colorHandle = GLES20.glGetUniformLocation(program, "uColor")
 
-        GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer)
-
-        // Apply a rotation matrix to make the terrain parallel to the rover triangle
+        // Apply rotation to align with rover XY plane
         val rotatedMVPMatrix = FloatArray(16)
         Matrix.setIdentityM(rotatedMVPMatrix, 0)
-
-        // Rotate the terrain 90 degrees around the X-axis (align it with the rover's XY plane)
-        Matrix.rotateM(rotatedMVPMatrix, 0, -90f, 1f, 0f, 0f)  // Rotate 90 degrees around X axis
-        // Multiply the original mvpMatrix by the rotated terrain matrix to apply the rotation
+        Matrix.rotateM(rotatedMVPMatrix, 0, -90f, 1f, 0f, 0f)
         Matrix.multiplyMM(rotatedMVPMatrix, 0, mvpMatrix, 0, rotatedMVPMatrix, 0)
 
-        // Pass the transformed MVP matrix to the shader
-        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, rotatedMVPMatrix, 0)
-        GLES20.glDrawArrays(GLES20.GL_LINES, 0, vertices.size / 3) // Draw the path as lines
+        GLES20.glEnableVertexAttribArray(positionHandle)
+
+        // Draw traveled segments in RED
+        GLES20.glUniform4f(colorHandle, 1f, 0f, 0f, 1f)
+        for (i in 0 until splitIndex.coerceAtMost(allSegments.size)) {
+            drawSegment(allSegments[i], positionHandle, mvpHandle, rotatedMVPMatrix)
+        }
+
+        // Draw remaining segments in LIGHT GRAY
+        GLES20.glUniform4f(colorHandle, 0.7f, 0.7f, 0.7f, 1f)
+        for (i in splitIndex until allSegments.size) {
+            drawSegment(allSegments[i], positionHandle, mvpHandle, rotatedMVPMatrix)
+        }
+
         GLES20.glDisableVertexAttribArray(positionHandle)
+    }
+
+    private fun drawSegment(segment: FloatArray, posHandle: Int, mvpHandle: Int, mvpMatrix: FloatArray) {
+        val buffer = ByteBuffer.allocateDirect(segment.size * 4)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+            .apply {
+                put(segment)
+                position(0)
+            }
+
+        GLES20.glVertexAttribPointer(posHandle, 3, GLES20.GL_FLOAT, false, 0, buffer)
+        GLES20.glUniformMatrix4fv(mvpHandle, 1, false, mvpMatrix, 0)
+        GLES20.glDrawArrays(GLES20.GL_LINES, 0, 2)
     }
 }
