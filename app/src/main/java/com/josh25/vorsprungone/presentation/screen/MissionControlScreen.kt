@@ -16,7 +16,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.josh25.vorsprungone.domain.model.RoverMission
 import com.josh25.vorsprungone.domain.model.toRover
 import com.josh25.vorsprungone.presentation.GraphicsUiOpenGL.SceneOpenGLSurfaceView
-import com.josh25.vorsprungone.presentation.GraphicsUiOpenGL.SceneRenderer
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 
@@ -26,7 +25,7 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
     val roverState by viewModel.roverState.collectAsState()
     val movements = remember { mutableStateListOf<String>() }
     LaunchedEffect(Unit) {
-        //viewModel.fetchMissionSequence()
+        viewModel.fetchMissionPlan()
     }
     BoxWithConstraints() {
         val isLandscape = maxWidth > maxHeight
@@ -34,14 +33,12 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
             if (isLandscape) {
                 Row(modifier = Modifier.fillMaxSize().padding(start = 42.dp, end = 42.dp)) {
                     Column() {
-
                         Text(
                             text = "Vorsprung One Mission Control",
                             fontWeight = FontWeight.Bold,
                             color = Color.Green,
                             style = MaterialTheme.typography.headlineSmall
                         )
-                        //     MainBar({ viewModel.fetchMissionSequence() })
                         RoverTextUiScreen(
                             roverState = roverState,
                             movements = movements,
@@ -81,18 +78,29 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
 }
 
 
+
 @Composable
 fun OpenGLComposeScreen(modifier: Modifier = Modifier, viewModel: MissionControlViewModel) {
     val context = LocalContext.current
+    val roverState by viewModel.roverState.collectAsState()
+
+    // ✅ Hold reference to surfaceView so we can access it outside factory
+    var surfaceViewRef by remember { mutableStateOf<SceneOpenGLSurfaceView?>(null) }
 
     AndroidView(
         factory = {
-            val surfaceView = SceneOpenGLSurfaceView(context, viewModel)
-            surfaceView
+            SceneOpenGLSurfaceView(context, viewModel).also { surfaceViewRef = it }
         },
         modifier = modifier
     )
+
+    LaunchedEffect(roverState) {
+        roverState?.let { mission ->
+            surfaceViewRef?.initMissionAndRender(mission)
+        }
+    }
 }
+
 
 @Composable
 fun MainBarH(onClick: () -> Unit){

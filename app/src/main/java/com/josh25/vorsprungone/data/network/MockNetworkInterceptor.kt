@@ -28,15 +28,15 @@ class MockNetworkInterceptor : Interceptor {
             createMockResponse(request, """
                 {
                     "topRightCorner": {
-                        "x": 9,
-                        "y": 9
+                        "x": 8,
+                        "y": 8
                     },
                     "roverPosition": {
-                        "x": 0,
-                        "y": 0
+                        "x": 2,
+                        "y": 2
                     },
                     "roverDirection": "N",
-                    "movements": "MMMMMM"
+                    "movements": "MMLMMRMRMMMMRMMMLMRMRMRM"
                 }
             """.trimIndent())
         } else {

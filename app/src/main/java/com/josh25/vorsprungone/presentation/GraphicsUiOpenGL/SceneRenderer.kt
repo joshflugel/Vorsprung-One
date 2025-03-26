@@ -6,6 +6,8 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Log
 import com.josh25.vorsprungone.domain.model.Direction
+import com.josh25.vorsprungone.domain.model.RoverMission
+import com.josh25.vorsprungone.domain.model.toRover
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 import javax.microedition.khronos.opengles.GL10
 
@@ -17,6 +19,8 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     private val viewMatrix = FloatArray(16)  // Camera view matrix
     private val mvpMatrix = FloatArray(16) // Working Model View Projection matrix
 
+    var readyToRender = false // prevent drawing until data is ready
+
     private lateinit var terrainGraphics: TerrainGraphics
     private lateinit var roverGraphics: RoverGraphics
     private lateinit var trajectoryGraphics: TrajectoryGraphics
@@ -24,6 +28,9 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     private var xOffset:Float = 0f
     private var yOffset:Float = 0f
     private var zoomFactor: Float = 1f
+    var gridSize = xyPair(9,9)
+    private var roverX = 0f
+    private var roverY = 0f
 
     // Objects Transformation Matrices
     private val terrainModelMatrix = FloatArray(16)
@@ -31,28 +38,32 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     private val roverModelMatrix = FloatArray(16)
     private val finalMvpMatrix = FloatArray(16)      // Final MVP matrix for rendering
 
+
+    fun initializeSceneWithMission(mission: RoverMission) {
+        gridSize = xyPair(mission.topRightCorner.x, mission.topRightCorner.y)
+        roverX = mission.roverPosition.x.toFloat()
+        roverY = mission.roverPosition.y.toFloat()
+        xOffset = gridSize.x.toFloat() / 2
+        yOffset = gridSize.y.toFloat() / 2
+        terrainGraphics = TerrainGraphics(gridSize)
+        trajectoryGraphics = TrajectoryGraphics(emptyList(), gridSize) // or real trajectory
+        roverGraphics = RoverGraphics()
+        zoomFactor = calculateZoomFactor(gridSize)
+        readyToRender = true
+    }
+
+    private var missionPending: RoverMission? = null
+    private var initialized = false
+
+    fun submitMission(mission: RoverMission) {
+        missionPending = mission
+        initialized = false
+    }
+
+
     override fun onSurfaceCreated(gl: GL10?, p1: javax.microedition.khronos.egl.EGLConfig?) {
         GLES20.glClearColor(0f, 0f, 0f, 1f) // Black background
         GLES20.glEnable(GLES20.GL_DEPTH_TEST) // Enable depth testing
-
-        var gridSize = xyPair(9,9)
-        xOffset = gridSize.x.toFloat()/2
-        yOffset = gridSize.y.toFloat()/2
-        terrainGraphics = TerrainGraphics(gridSize)
-
-        // Trajectory Waypoints
-        val mockWaypoints = listOf(
-            Pair(0f, 0f),
-            Pair(1f, 2f),   // START N
-            Pair(0f, 2f),   // LM, W
-            Pair(0f, 1f),   // LM, S
-            Pair(1f, 1f),   // LM, E
-            Pair(1f, 2f),   // LM, N
-            Pair(1f, 3f),   // LM, N
-        )
-        trajectoryGraphics = TrajectoryGraphics(mockWaypoints, gridSize)
-        roverGraphics = RoverGraphics()
-        zoomFactor = calculateZoomFactor(gridSize)
     }
 
     // Dynamically calculate the zoom factor based on the grid size
@@ -74,11 +85,16 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+        if (!initialized && missionPending != null) {
+            initializeSceneWithMission(missionPending!!)
+            missionPending = null
+            initialized = true
+        }
+        if (!readyToRender) return
 
         // Apply zoom by adjusting the camera's view matrix based on scale in ViewModel
         val scale = viewModel.scale
         val adjustedZoom = zoomFactor * scale
-
 
         Matrix.setLookAtM(
             viewMatrix, 0,
@@ -87,22 +103,10 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
             0f, 1f, 0f              // Up direction
         )
 
-
-
-
-        var roverX = 0f
-        var roverY = 0f
-        Matrix.setIdentityM(roverModelMatrix, 0)
-        viewModel.roverState.value?.let { roverMission ->
-            roverX = roverMission.roverPosition.x.toFloat()
-            roverY = roverMission.roverPosition.y.toFloat()
-           // Matrix.translateM(roverModelMatrix, 0, roverX - xOffset, 0f, roverY - yOffset)
-        }
-
         // Reset matrices before applying transformations
+        Matrix.setIdentityM(roverModelMatrix, 0)
         Matrix.setIdentityM(terrainModelMatrix, 0)
         Matrix.setIdentityM(trajectoryModelMatrix, 0)
-
 
         viewModel.run {
             // Apply scene-wide transformations (rotate + scale) - x z -y
@@ -117,7 +121,6 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
             Matrix.rotateM(trajectoryModelMatrix, 0, rotationX, 1f, 0f, 0f)
             Matrix.rotateM(trajectoryModelMatrix, 0, rotationY, 0f, 1f, 0f)
             Matrix.translateM(trajectoryModelMatrix, 0, 0f, 0.4f, 0f)
-
 
             // Compute MVP Model View Projection matrices of objects, and draw
             Matrix.multiplyMM(mvpMatrix, 0, projectionMatrix, 0, viewMatrix, 0)
@@ -139,7 +142,6 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
             // Limit vertical rotation (rotationX) to avoid seeing the scene from underground
             rotationX -= dy * 0.5f
             rotationX = rotationX.coerceIn(-15f, 90f)
-
             // Limit horizontal rotation (rotationY)
             rotationY -= dx * 0.5f
             rotationY = (rotationY + 180f) % 360f - 180f
@@ -150,7 +152,6 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
         viewModel.run {
             scale /= scaleFactor // Update scale in the ViewModel
             scale = scale.coerceIn(0.1f, 6f)  // Clamp zoom level
-            Log.d("Zoom Debug", "Updated Scale: $scale")
         }
     }
 }

@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import com.josh25.vorsprungone.domain.model.RoverMission
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 
@@ -13,7 +14,7 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
     GestureDetector.OnGestureListener,
     ScaleGestureDetector.OnScaleGestureListener {
 
-    private val renderer: SceneRenderer
+    val renderer: SceneRenderer
     private val scaleGestureDetector = ScaleGestureDetector(context, this)
     private val gestureDetector = GestureDetector(context, this)
 
@@ -22,6 +23,10 @@ class SceneOpenGLSurfaceView(context: Context, private val viewmodel: MissionCon
         renderer = SceneRenderer(viewmodel)
         setRenderer(renderer)
         renderMode = RENDERMODE_CONTINUOUSLY
+    }
+    fun initMissionAndRender(mission: RoverMission) {
+        renderer.submitMission(mission)
+        requestRender()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
