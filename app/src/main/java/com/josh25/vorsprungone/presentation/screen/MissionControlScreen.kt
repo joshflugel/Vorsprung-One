@@ -3,6 +3,7 @@ package com.josh25.vorsprungone.presentation.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -137,14 +138,16 @@ fun OpenGLComposeScreen(
 
 @Composable
 fun MainBarH(startMission: () -> Unit, newMission: () -> Unit,
-             isMissionRunning: Boolean){
+             isMissionRunning: Boolean, movements: MutableList<String>){
     Row(
         modifier = Modifier.padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(
-            onClick = { newMission() },
+            onClick = {
+                movements.clear()
+                newMission() },
             enabled = !isMissionRunning,
             colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
             modifier = Modifier
@@ -157,7 +160,9 @@ fun MainBarH(startMission: () -> Unit, newMission: () -> Unit,
         }
         Spacer(Modifier.width(8.dp))
         Button(
-            onClick = {startMission() },
+            onClick = {
+                movements.clear()
+                startMission() },
             enabled = !isMissionRunning,
             colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
             modifier = Modifier
@@ -182,8 +187,11 @@ fun RoverTextUiScreen(
     newMission: () -> Unit
 ) {
     Column(modifier = modifier.padding(2.dp)) {
-        MainBarH(onStartMission, newMission,
-            isMissionRunning = isMissionRunning)
+        MainBarH(
+            onStartMission, newMission,
+            isMissionRunning = isMissionRunning,
+            movements = movements
+        )
         Text(
             text = roverState?.let {
                 val rover = it.toRover()
@@ -194,8 +202,13 @@ fun RoverTextUiScreen(
         Spacer(modifier = Modifier.height(8.dp))
         Text("Movement History:")
         LazyColumn {
-            items(movements) { movement ->
-                Text(movement, style = MaterialTheme.typography.bodyMedium)
+            itemsIndexed(movements) { index, movement ->
+                Text(
+                    text = movement,
+                    color = if (index == 0) Color.Green else Color.Unspecified,
+                    fontWeight = if (index == 0) FontWeight.Bold else FontWeight.Normal
+                )
+
             }
         }
 
@@ -205,7 +218,7 @@ fun RoverTextUiScreen(
                 val newPosition = "(${rover.x}, ${rover.y}) - ${rover.direction}"
 
                 if (movements.isEmpty() || movements.last() != newPosition) {
-                    movements.add(newPosition)
+                    movements.add(0,newPosition)
                 }
             }
         }
