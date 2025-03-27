@@ -9,6 +9,8 @@ import retrofit2.http.GET
 interface MockApi {
     @GET("rovermission/init")
     suspend fun getRoverMissionData(): RoverMissionResponse
+    @GET("newrovermission/init")
+    suspend fun getNewRoverMissionData(): RoverMissionResponse
 }
 
 fun createMockApi(interceptor: MockNetworkInterceptor): MockApi {

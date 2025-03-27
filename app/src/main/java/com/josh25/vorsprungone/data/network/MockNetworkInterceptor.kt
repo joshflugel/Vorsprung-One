@@ -1,45 +1,25 @@
 package com.josh25.vorsprungone.data.network
 
+import com.josh25.vorsprungone.data.datasource.MissionPlannerDataSource
 import okhttp3.Interceptor
 import okhttp3.MediaType
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody
+import javax.inject.Inject
 
-/*
-{
-    "topRightCorner": {
-        "x": 12,
-        "y": 12
-    },
-    "roverPosition": {
-        "x": 1,
-        "y": 2
-    },
-    "roverDirection": "N",
-    "movements": "LMLMLMLMM"
-}
-*/
-class MockNetworkInterceptor : Interceptor {
+
+class MockNetworkInterceptor @Inject constructor(
+    private val missionPlannerDataSource: MissionPlannerDataSource
+) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         return if (request.url().encodedPath() == "/rovermission/init") {
-            createMockResponse(request, """
-                {
-                    "topRightCorner": {
-                        "x": 8,
-                        "y": 8
-                    },
-                    "roverPosition": {
-                        "x": 2,
-                        "y": 2
-                    },
-                    "roverDirection": "N",
-                    "movements": "MMLMMRMRMMMMRMMMLMRMRMLM"
-                }
-            """.trimIndent())
-        } else {
+            createMockResponse(request, missionPlannerDataSource.getMission())
+        } else if (request.url().encodedPath() == "/newrovermission/init") {
+            createMockResponse(request, missionPlannerDataSource.getNewMission())
+        } else{
             Response.Builder()
                 .code(404)
                 .request(request)

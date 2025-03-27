@@ -37,19 +37,13 @@ class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>, 
     }
 
     private val allSegments: List<FloatArray> = buildSegmentList(pathCoordinates)
-
-    // Split the full line list into individual segments
     private fun buildSegmentList(coords: List<Pair<Float, Float>>): List<FloatArray> {
-        val list = mutableListOf<FloatArray>()
-        for (i in 0 until coords.size - 1) {
-            val (x1, y1) = coords[i]
-            val (x2, y2) = coords[i + 1]
-            list.add(floatArrayOf(
+        return coords.zipWithNext { (x1, y1), (x2, y2) ->
+            floatArrayOf(
                 x1 - xOffset, y1 - yOffset, 0f,
                 x2 - xOffset, y2 - yOffset, 0f
-            ))
+            )
         }
-        return list
     }
 
     fun draw(mvpMatrix: FloatArray, splitIndex: Int) {
@@ -58,6 +52,8 @@ class TrajectoryGraphics(private val pathCoordinates: List<Pair<Float, Float>>, 
         val positionHandle = GLES20.glGetAttribLocation(program, "vPosition")
         val mvpHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix")
         val colorHandle = GLES20.glGetUniformLocation(program, "uColor")
+
+        GLES20.glLineWidth(4f)
 
         // Apply rotation to align with rover XY plane
         val rotatedMVPMatrix = FloatArray(16)

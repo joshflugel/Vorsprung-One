@@ -8,6 +8,6 @@ class GetMissionPlanUseCase @Inject constructor(
     private val missionPlanRepository: MissionPlanRepository
 ) {
     suspend fun execute(): RoverMission {
-        return missionPlanRepository.getMissionPlan().first
+        return missionPlanRepository.getNewMissionPlan()
     }
 }

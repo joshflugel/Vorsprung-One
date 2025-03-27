@@ -1,3 +1,8 @@
 # Vorsprung-One
-This is martian rover simulator for Android called "Vorsprung One", which means advantage or lead, in German. 
-CLEAN Tech stack: Kotlin, Jetpack Compose Material3, MVVM, Dependency injection with Hilt, Flows, Coroutines and Monad functional programming.
+This is a martian rover mission control simulator for Android, called "Vorsprung One", which means advantage or lead, in German. 
+
+Tech stack: Kotlin, native graphics with OpenGL2, Jetpack Compose Material3, Dependency injection with Hilt, Flows and Coroutines.
+
+Design guidelines: SOLID principles, CLEAN architecture, MVVM presentation pattern, and Functional Programming with Monads.
+
+2025 - Josh Flugel

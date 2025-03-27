@@ -7,6 +7,7 @@ import android.opengl.Matrix
 import android.util.Log
 import com.josh25.vorsprungone.domain.model.Direction
 import com.josh25.vorsprungone.domain.model.RoverMission
+import com.josh25.vorsprungone.domain.model.TrajectoryState
 import com.josh25.vorsprungone.domain.model.computeFullTrajectory
 import com.josh25.vorsprungone.domain.model.toRover
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
@@ -25,13 +26,20 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
     private lateinit var terrainGraphics: TerrainGraphics
     private lateinit var roverGraphics: RoverGraphics
-    private lateinit var trajectoryGraphics: TrajectoryGraphics
-    private var trajectoryCache: List<Pair<Float, Float>> = emptyList()
+
+    private var trajectoryGraphics: TrajectoryGraphics? = null
+    private var trajectoryState: TrajectoryState = TrajectoryState()
+    private var pendingTrajectoryState: TrajectoryState? = null
+
+    fun updateTrajectoryState(state: TrajectoryState) {
+        pendingTrajectoryState = state
+    }
+
 
     private var xOffset:Float = 0f
     private var yOffset:Float = 0f
     private var zoomFactor: Float = 1f
-    var gridSize = xyPair(9,9)
+    var gridSize = xyPair(0, 0)
     private var roverX = 0f
     private var roverY = 0f
 
@@ -41,37 +49,54 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     private val roverModelMatrix = FloatArray(16)
     private val finalMvpMatrix = FloatArray(16)      // Final MVP matrix for rendering
 
+    private var lastRenderedMission: RoverMission? = null
 
-    fun initializeSceneWithMission(mission: RoverMission) {
+    private fun initializeSceneWithMission(mission: RoverMission) {
         gridSize = xyPair(mission.topRightCorner.x, mission.topRightCorner.y)
         roverX = mission.roverPosition.x.toFloat()
         roverY = mission.roverPosition.y.toFloat()
         xOffset = gridSize.x.toFloat() / 2
         yOffset = gridSize.y.toFloat() / 2
-        if(mission.computeFullTrajectory().size > 1) {
-            trajectoryCache =
-                mission.computeFullTrajectory()// toRover().fullTrajectory//viewModel.fetchMissionPlan(). .computeFullTrajectory()
-        }
-        Log.e("joshtag","Direction: ${mission.toRover().direction}")
+
         terrainGraphics = TerrainGraphics(gridSize)
-        trajectoryGraphics = TrajectoryGraphics(trajectoryCache, gridSize) // or real trajectory
         roverGraphics = RoverGraphics()
+
         zoomFactor = calculateZoomFactor(gridSize)
         readyToRender = true
+
+        val newTrajectory = mission.computeFullTrajectory()
+        if (newTrajectory.size > 1) {
+            viewModel.updateTrajectory(newTrajectory)
+            trajectoryState = TrajectoryState(newTrajectory, 0) // internal cache
+            trajectoryGraphics = TrajectoryGraphics(newTrajectory, gridSize) // correct offsets!
+            trajectoryState.segments.forEachIndexed { i, (x, y) ->
+            }
+        }
     }
 
     private var missionPending: RoverMission? = null
     private var initialized = false
-
     fun submitMission(mission: RoverMission) {
+        lastRenderedMission = mission
         missionPending = mission
         initialized = false
     }
 
-
     override fun onSurfaceCreated(gl: GL10?, p1: javax.microedition.khronos.egl.EGLConfig?) {
         GLES20.glClearColor(0f, 0f, 0f, 1f) // Black background
         GLES20.glEnable(GLES20.GL_DEPTH_TEST) // Enable depth testing
+        // If screen rotated, re-submit the last mission to ensure scene re-inits
+        if (lastRenderedMission != null){ // && missionPending == null) {
+            missionPending = lastRenderedMission
+            initialized = false
+        }
+        if (trajectoryState.segments.size > 1 && gridSize.x > 0 && gridSize.y > 0) {
+            Log.i("joshtag", "Surface recreated. Rebuilding trajectoryGraphics with correct offsets.")
+            trajectoryGraphics = TrajectoryGraphics(trajectoryState.segments, gridSize)
+        } else {
+            Log.w("joshtag", "Surface recreated, but gridSize not ready: gridSize=($gridSize)")
+        }
+        Log.i("joshtag", "Surface recreated. gridSize=($gridSize), trajectory has ${trajectoryState.segments.size} segments")
     }
 
     // Dynamically calculate the zoom factor based on the grid size
@@ -85,7 +110,6 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
         GLES20.glViewport(0, 0, width, height)
-
         val ratio: Float = width.toFloat() / height.toFloat()
         Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1f, 1f, 3f, 50f)  // Adjust far plane for better zoom-out
     }
@@ -98,6 +122,13 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
             roverGraphics.setDirection(missionPending!!.toRover().direction)
             missionPending = null
             initialized = true
+        }
+        pendingTrajectoryState?.let { state ->
+            if (state.segments.isNotEmpty()) {
+                trajectoryGraphics = TrajectoryGraphics(state.segments, gridSize)
+                trajectoryState = state
+            }
+            pendingTrajectoryState = null
         }
         if (!readyToRender) return
 
@@ -142,19 +173,22 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
 
             Matrix.multiplyMM(finalMvpMatrix, 0, mvpMatrix, 0, trajectoryModelMatrix, 0)
             updateCurrentRoverPosition(roverX, roverY)
-            trajectoryGraphics.draw(finalMvpMatrix, currentWaypointIndex)
-
-            Log.e("joshtag", "Trajectory.size: ${trajectoryCache.size}")
-        }
-
-    }
-    private var currentWaypointIndex = 0
-    fun updateCurrentRoverPosition(x: Float, y: Float) {
-        // Find the closest waypoint index (or the last one the rover passed)
-        trajectoryCache.forEachIndexed { index, (px, py) ->
-            if (px == x && py == y) {
-                currentWaypointIndex = index
+            if (trajectoryGraphics == null && trajectoryState.value.segments.isNotEmpty()) {
+                trajectoryGraphics = TrajectoryGraphics(trajectoryState.value.segments, gridSize)
             }
+
+            trajectoryGraphics?.let {
+                Matrix.multiplyMM(finalMvpMatrix, 0, mvpMatrix, 0, trajectoryModelMatrix, 0)
+                it.draw(finalMvpMatrix, trajectoryState.value.splitIndex)
+            }
+        }
+    }
+
+    private fun updateCurrentRoverPosition(x: Float, y: Float) {
+        val segments = trajectoryState.segments
+        val index = segments.indexOfFirst { it == Pair(x, y) }
+        if (index >= 0) {
+            viewModel.updateTrajectorySplitIndex(index)
         }
     }
 
@@ -166,12 +200,11 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
         surfaceView?.requestRender()
     }
 
-
     fun onRotate(dx: Float, dy: Float) {
         viewModel.run {
             // Limit vertical rotation (rotationX) to avoid seeing the scene from underground
             rotationX -= dy * 0.5f
-            rotationX = rotationX.coerceIn(-15f, 90f)
+            rotationX = rotationX.coerceIn(-35f, 90f)
             // Limit horizontal rotation (rotationY)
             rotationY -= dx * 0.5f
             rotationY = (rotationY + 180f) % 360f - 180f
@@ -182,7 +215,7 @@ class SceneRenderer(private val viewModel: MissionControlViewModel) : GLSurfaceV
     fun onZoom(scaleFactor: Float) {
         viewModel.run {
             scale /= scaleFactor // Update scale in the ViewModel
-            scale = scale.coerceIn(0.1f, 6f)  // Clamp zoom level
+            scale = scale.coerceIn(0.1f, 14f)  // Clamp zoom level
         }
         triggerRender()
     }

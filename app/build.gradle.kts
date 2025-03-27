@@ -92,4 +92,6 @@ dependencies {
     implementation(libs.converter.gson)
 
     // testImplementation("com.squareup.retrofit2:retrofit-mock:2.7.1")
+    implementation(libs.androidx.datastore.preferences)
+
 }

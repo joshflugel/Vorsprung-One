@@ -1,5 +1,6 @@
 package com.josh25.vorsprungone.di
 
+import com.josh25.vorsprungone.data.datasource.MissionPlannerDataSource
 import com.josh25.vorsprungone.data.datasource.RoverMissionDataSource
 import com.josh25.vorsprungone.data.network.MockApi
 import com.josh25.vorsprungone.data.network.MockNetworkInterceptor
@@ -20,12 +21,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideMockNetworkInterceptor(): MockNetworkInterceptor {
-        return MockNetworkInterceptor()
-    }
-
-    @Provides
-    @Singleton
     fun provideMockApi(interceptor: MockNetworkInterceptor): MockApi {
         return createMockApi(interceptor)
     }
@@ -34,6 +29,14 @@ object AppModule {
     @Singleton
     fun provideRoverMissionDataSource(api: MockApi): RoverMissionDataSource {
         return RoverMissionDataSource(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMockNetworkInterceptor(
+        missionPlannerDataSource: MissionPlannerDataSource
+    ): MockNetworkInterceptor {
+        return MockNetworkInterceptor(missionPlannerDataSource)
     }
 
     @Provides

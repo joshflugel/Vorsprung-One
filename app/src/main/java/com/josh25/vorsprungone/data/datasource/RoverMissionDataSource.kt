@@ -7,4 +7,7 @@ class RoverMissionDataSource(private val api: MockApi) {
     suspend fun fetchRoverMissionData(): RoverMissionResponse {
         return api.getRoverMissionData()
     }
+    suspend fun fetchNewRoverMissionData(): RoverMissionResponse {
+        return api.getNewRoverMissionData()
+    }
 }

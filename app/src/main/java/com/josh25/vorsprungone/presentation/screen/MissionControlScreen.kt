@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,55 +22,80 @@ import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
 
 @Composable
 fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
-    val context = LocalContext.current
+
     val roverState by viewModel.roverState.collectAsState()
     val movements = remember { mutableStateListOf<String>() }
+    val isMissionRunning by remember { derivedStateOf { viewModel.isMissionRunning } }
+
+    var hasLoadedInitialMission by rememberSaveable { mutableStateOf(false) }
+    val surfaceViewRef = remember { mutableStateOf<SceneOpenGLSurfaceView?>(null) }
+
     LaunchedEffect(Unit) {
-        viewModel.fetchMissionPlan()
+        if (!hasLoadedInitialMission) {
+            viewModel.fetchMissionPlan()
+            hasLoadedInitialMission = true
+        }
     }
+
     BoxWithConstraints() {
         val isLandscape = maxWidth > maxHeight
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(WindowInsets.systemBars.asPaddingValues())) {
             if (isLandscape) {
-                Row(modifier = Modifier.fillMaxSize().padding(start = 42.dp, end = 42.dp)) {
+                Text(
+                    text = "Vorsprung One - Mission Control",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Green,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Row(modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 2.dp, end = 2.dp)) {
                     Column() {
-                        Text(
-                            text = "Vorsprung One Mission Control",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Green,
-                            style = MaterialTheme.typography.headlineSmall
-                        )
+
                         RoverTextUiScreen(
                             roverState = roverState,
                             movements = movements,
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                            onClick = {viewModel.fetchMissionSequence()}
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            isMissionRunning = isMissionRunning,
+                            onStartMission = {viewModel.fetchMissionSequence()},
+                            newMission = {viewModel.fetchMissionPlan()},
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     OpenGLComposeScreen(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                        viewModel
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        viewModel = viewModel,
+                        surfaceViewRef = surfaceViewRef
                     )
                 }
             } else {
                 Column() {
-                   // MainBar({ viewModel.fetchMissionSequence() })
                     Text(
-                        text = " Vorsprung One Mission Control",
+                        text = " Vorsprung One - Mission Control",
                         fontWeight = FontWeight.Bold,
                         color = Color.Green,
                         style = MaterialTheme.typography.headlineMedium
                     )
                     OpenGLComposeScreen(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        viewModel
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        viewModel = viewModel,
+                        surfaceViewRef = surfaceViewRef
                     )
                     RoverTextUiScreen(
                         roverState = roverState,
                         movements = movements,
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
-                        onClick = {viewModel.fetchMissionSequence()}
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        isMissionRunning = isMissionRunning,
+                        onStartMission = {viewModel.fetchMissionSequence()},
+                        newMission = {viewModel.fetchMissionPlan()},
                     )
                 }
             }
@@ -78,49 +104,72 @@ fun MissionControlScreen(viewModel: MissionControlViewModel = hiltViewModel()) {
 }
 
 
-
 @Composable
-fun OpenGLComposeScreen(modifier: Modifier = Modifier, viewModel: MissionControlViewModel) {
+fun OpenGLComposeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: MissionControlViewModel,
+    surfaceViewRef: MutableState<SceneOpenGLSurfaceView?>
+) {
     val context = LocalContext.current
     val roverState by viewModel.roverState.collectAsState()
-
-    // ✅ Hold reference to surfaceView so we can access it outside factory
-    var surfaceViewRef by remember { mutableStateOf<SceneOpenGLSurfaceView?>(null) }
+    val trajectoryState by viewModel.trajectoryState.collectAsState()
 
     AndroidView(
         factory = {
-            SceneOpenGLSurfaceView(context, viewModel).also { surfaceViewRef = it }
+            SceneOpenGLSurfaceView(context, viewModel).also { surfaceViewRef.value = it }
         },
         modifier = modifier
     )
 
     LaunchedEffect(roverState) {
         roverState?.let { mission ->
-            surfaceViewRef?.initMissionAndRender(mission)
-            surfaceViewRef?.requestRender()
+            surfaceViewRef.value?.initMissionAndRender(mission)
+            surfaceViewRef.value?.requestRender()
+            surfaceViewRef.value?.renderer?.submitMission(mission)
         }
+    }
+    LaunchedEffect(trajectoryState) {
+        surfaceViewRef.value?.renderer?.updateTrajectoryState(trajectoryState)
+        surfaceViewRef.value?.requestRender()
     }
 }
 
 
 @Composable
-fun MainBarH(onClick: () -> Unit){
+fun MainBarH(startMission: () -> Unit, newMission: () -> Unit,
+             isMissionRunning: Boolean){
     Row(
-        modifier = Modifier.padding(horizontal = 1.dp, vertical = 12.dp),
+        modifier = Modifier.padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("Rover Position", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.width(24.dp))
         Button(
-            onClick = {onClick() },
+            onClick = { newMission() },
+            enabled = !isMissionRunning,
             colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
             modifier = Modifier
                 .height(30.dp)
         ) {
-            Text("Execute Mission", color = Color.White)
+            Text(
+                "Change Map",
+                color = if (isMissionRunning) Color.Gray else Color.White
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Button(
+            onClick = {startMission() },
+            enabled = !isMissionRunning,
+            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray),
+            modifier = Modifier
+                .height(30.dp)
+        ) {
+            Text(
+                "Start Mission",
+                color = if (isMissionRunning) Color.Gray else Color.White
+            )
         }
     }
+    Text("Rover Position", style = MaterialTheme.typography.headlineSmall)
 }
 
 @Composable
@@ -128,10 +177,13 @@ fun RoverTextUiScreen(
     roverState: RoverMission?,
     movements: MutableList<String>,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    isMissionRunning: Boolean,
+    onStartMission: () -> Unit,
+    newMission: () -> Unit
 ) {
-    Column(modifier = modifier.padding(12.dp)) {
-        MainBarH(onClick)
+    Column(modifier = modifier.padding(2.dp)) {
+        MainBarH(onStartMission, newMission,
+            isMissionRunning = isMissionRunning)
         Text(
             text = roverState?.let {
                 val rover = it.toRover()

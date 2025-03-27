@@ -25,7 +25,7 @@ fun RoverMission.toRover(): Rover {
         direction = roverDirection,
         maxX = topRightCorner.x,
         maxY = topRightCorner.y,
-        movements = movements
+        movements = movements.toList()
     )
 }
 

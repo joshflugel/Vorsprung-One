@@ -28,7 +28,7 @@ class GetMissionSequenceUseCase @Inject constructor(
             }
             Log.d("RoverDebug", "Emitting: ${monad.get().toRoverMission()}")
 
-            delay(1000)
+            delay(250)
             emit(monad.get().toRoverMission())
         }
     }

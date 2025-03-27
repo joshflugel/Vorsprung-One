@@ -80,6 +80,7 @@ class TerrainGraphics(gridSize: xyPair = xyPair(10, 10)) {
         val positionHandle = GLES20.glGetAttribLocation(program, "vPosition")
         val mvpHandle = GLES20.glGetUniformLocation(program, "uMVPMatrix")
 
+        GLES20.glLineWidth(4f)
         GLES20.glEnableVertexAttribArray(positionHandle)
         GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 0, vertexBuffer)
 
