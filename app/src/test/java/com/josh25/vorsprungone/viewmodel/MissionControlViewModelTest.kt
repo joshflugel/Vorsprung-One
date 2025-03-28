@@ -22,6 +22,7 @@ class MissionControlViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var viewModel: MissionControlViewModel
     private val mockRepository: MissionRepository = mockk()
+    private val dispatcher = StandardTestDispatcher()
 
     private val fakeMission = RoverMission(
         topRightCorner = Corner(5, 5),

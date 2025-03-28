@@ -35,7 +35,7 @@ class MissionControlViewModelUpdateTrajectorySplitIndexTest {
         val segments = listOf(0f to 0f, 1f to 1f, 2f to 2f)
         viewModel.updateTrajectory(segments)
 
-        // When: we update the index
+        // When: update the index
         viewModel.updateTrajectorySplitIndex(2)
 
         // Then: the value is reflected correctly
