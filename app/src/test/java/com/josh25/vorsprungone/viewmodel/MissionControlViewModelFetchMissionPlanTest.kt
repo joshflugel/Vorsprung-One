@@ -16,7 +16,7 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class MissionControlViewModel_FetchMissionPlanTest {
+class MissionControlViewModelFetchMissionPlanTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var viewModel: MissionControlViewModel

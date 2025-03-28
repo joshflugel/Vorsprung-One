@@ -26,7 +26,6 @@ class GetMissionSequenceUseCase @Inject constructor(
                 Movements.RIGHT -> monad.flatMap { it.turnRight() }
                 Movements.MOVE -> monad.flatMap { it.move() }
             }
-            //Log.d("RoverDebug", "Emitting: ${monad.get().toRoverMission()}")
             delay(250)
             emit(monad.get().toRoverMission())
         }

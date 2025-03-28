@@ -1,19 +1,5 @@
 package com.josh25.vorsprungone.data.datasource
 
-/*
-val missionNumber = 0
-class MissionPlannerDataSource {
-    fun getMission(): String {
-        //return predefinedMissions.random()
-        return predefinedMissions.get(missionNumber)
-    }
-    fun getNewMission(): String {
-        //return predefinedMissions.random()
-        missionNumber = random(1..predefinedMissions.size)
-        return predefinedMissions.get(missionNumber)
-    }
-}
- */
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.flow.first
@@ -25,7 +11,6 @@ import javax.inject.Inject
 import kotlin.random.Random
 import kotlin.random.nextInt
 
-//class MissionPlannerDataSource(private val context: Context) {
 class MissionPlannerDataSource @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
