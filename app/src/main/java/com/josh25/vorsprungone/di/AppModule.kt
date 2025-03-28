@@ -6,13 +6,17 @@ import com.josh25.vorsprungone.data.network.MockApi
 import com.josh25.vorsprungone.data.network.MockNetworkInterceptor
 import com.josh25.vorsprungone.data.network.createMockApi
 import com.josh25.vorsprungone.data.repository.MissionPlanRepository
+import com.josh25.vorsprungone.domain.repository.MissionRepository
 import com.josh25.vorsprungone.domain.usecase.GetMissionPlanUseCase
 import com.josh25.vorsprungone.domain.usecase.GetMissionSequenceUseCase
 import com.josh25.vorsprungone.presentation.viewmodel.MissionControlViewModel
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import javax.inject.Singleton
 
 @Module
@@ -51,12 +55,38 @@ object AppModule {
         return GetMissionSequenceUseCase(repository)
     }
 
+    /*
     @Provides
     @Singleton
     fun provideRoverViewModel(
         getMissionSequenceUseCase: GetMissionSequenceUseCase,
         getMissionPlanUseCase: GetMissionPlanUseCase
     ): MissionControlViewModel {
-        return MissionControlViewModel(getMissionSequenceUseCase, getMissionPlanUseCase) // ✅ correct instance
+        return MissionControlViewModel(getMissionSequenceUseCase, getMissionPlanUseCase, providesIoDispatcher)
     }
+
+     */
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object ViewModelModule {
+        @Provides
+        @Singleton
+        fun provideMissionControlViewModel(
+            getMissionSequenceUseCase: GetMissionSequenceUseCase,
+            getMissionPlanUseCase: GetMissionPlanUseCase,
+            @IoDispatcher dispatcher: CoroutineDispatcher
+        ): MissionControlViewModel {
+            return MissionControlViewModel(getMissionSequenceUseCase, getMissionPlanUseCase, dispatcher)
+        }
+    }
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object DispatcherModule {
+        @Provides
+        @IoDispatcher
+        fun providesIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
+    }
+
 }

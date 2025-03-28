@@ -6,24 +6,27 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.josh25.vorsprungone.domain.model.RoverMission
 import com.josh25.vorsprungone.domain.model.TrajectoryState
-import com.josh25.vorsprungone.domain.model.computeFullTrajectory
-import com.josh25.vorsprungone.domain.model.toRover
 import com.josh25.vorsprungone.domain.usecase.GetMissionPlanUseCase
 import com.josh25.vorsprungone.domain.usecase.GetMissionSequenceUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
+import com.josh25.vorsprungone.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Inject
+
 
 @HiltViewModel
 class MissionControlViewModel @Inject constructor(
     private val getMissionSequenceUseCase: GetMissionSequenceUseCase,
-    private val getMissionPlanUseCase: GetMissionPlanUseCase
+    private val getMissionPlanUseCase: GetMissionPlanUseCase,
+    @IoDispatcher private val dispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _roverState = MutableStateFlow<RoverMission?>(null)
@@ -41,10 +44,11 @@ class MissionControlViewModel @Inject constructor(
     var scale by mutableFloatStateOf(1f)
 
     fun fetchMissionSequence() {
-        viewModelScope.launch {
+        //viewModelScope.launch(dispatcher) {
+        viewModelScope.launch(dispatcher) {
             setIsMissionRunning(true)
             getMissionSequenceUseCase.execute().collect { updatedRover ->
-                Log.d("RoverDebug", "New RoverMission received: $updatedRover")
+                println("joshtag, New RoverMission received: $updatedRover")
                 _roverState.value = updatedRover
                 val newPosition = Pair(
                     updatedRover.roverPosition.x.toFloat(),
@@ -61,7 +65,7 @@ class MissionControlViewModel @Inject constructor(
     }
 
     fun fetchMissionPlan() {
-        viewModelScope.launch {
+        viewModelScope.launch(dispatcher) {
             val missionPlan = getMissionPlanUseCase.execute()
             _trajectoryState.value = TrajectoryState()
             _roverState.value = missionPlan

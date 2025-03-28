@@ -42,6 +42,9 @@ android {
     hilt {
         enableAggregatingTask = false
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = false
+    }
 }
 
 dependencies {
@@ -93,5 +96,15 @@ dependencies {
 
     // testImplementation("com.squareup.retrofit2:retrofit-mock:2.7.1")
     implementation(libs.androidx.datastore.preferences)
+
+    // Testing
+    testImplementation(libs.turbine)
+    androidTestImplementation(libs.turbine)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+
+    testImplementation("io.mockk:mockk:1.13.16")
+
 
 }
